@@ -1,6 +1,6 @@
-"""The Verification Gate — the Iron Law (remix source: superpowers).
+"""The Verification Gate — ONITSIR's Iron Law.
 
-superpowers' core discipline: "NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION
+ONITSIR's core discipline: "NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION
 EVIDENCE." This module encodes that as an actual gate a phase must pass before it
 can be marked complete. A phase cannot claim success on vibes — it must attach
 evidence (a command + its output + a passing signal) that the gate validates.

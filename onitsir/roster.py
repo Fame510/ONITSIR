@@ -1,4 +1,4 @@
-"""The Roster — ONITSIR's workforce (remix source: agency-agents).
+"""The Roster — ONITSIR's specialist workforce.
 
 Loads the 164 specialist playbooks and exposes keyword/category search so the
 Router can match a goal to the right experts.

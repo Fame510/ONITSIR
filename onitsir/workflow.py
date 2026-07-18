@@ -1,6 +1,6 @@
-"""The Workflow Machine — mission phases (remix source: gsd-pro).
+"""The Workflow Machine — ONITSIR's mission phases.
 
-GSD's spine is a disciplined march through phases with a verification report
+ONITSIR's spine is a disciplined march through phases with a verification report
 closing each one. ONITSIR encodes that as an explicit state machine:
 
     INTAKE -> SPEC -> PLAN -> BUILD -> VERIFY -> SHIP
@@ -8,7 +8,7 @@ closing each one. ONITSIR encodes that as an explicit state machine:
 Rules enforced here:
 - Phases advance in order; you cannot skip ahead.
 - A phase can only be completed with verification evidence that satisfies the
-  Iron Law gate (superpowers). This is where GSD's "machine" and superpowers'
+  Iron Law gate (the Iron-Law method). This is where ONITSIR's machine and its Iron-Law method meet.
   "method" fuse.
 - The mission is only SHIPPED when every phase before it has been verified.
 """
@@ -88,7 +88,7 @@ class Workflow:
         return self.current
 
     def progress(self) -> dict[str, str]:
-        """A GSD-style status snapshot: phase -> status."""
+        """A status snapshot: phase -> status."""
         return {p.value: self._records[p].status.value for p in self._order}
 
     def verified_count(self) -> int:

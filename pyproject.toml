@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "onitsir"
-version = "0.1.0"
+version = "0.2.0"
 description = 'ONITSIR — "On It, Sir." An AI agency operating system: a routable specialist roster, a verify-gated workflow, and an autonomous phase machine.'
 readme = "README.md"
 requires-python = ">=3.10"

@@ -1,6 +1,6 @@
 """The Router — matches a mission goal to the right specialists.
 
-Remix note: agency-agents gives us the *who*. The Router is the dispatch layer
+The Roster gives us the *who*. The Router is the dispatch layer
 that turns a free-text goal into a ranked crew, so a mission is always staffed by
 the most relevant experts rather than a generic assistant.
 """

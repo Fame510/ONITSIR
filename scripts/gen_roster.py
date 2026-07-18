@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate ONITSIR roster.json from the agency-agents catalog.
+"""Generate ONITSIR roster.json — the 164-specialist workforce.
 
-Remix source #1 (agency-agents): the 164 specialist playbooks become ONITSIR's
+The 164 specialist playbooks become ONITSIR's
 routable workforce. We derive lightweight routing keywords from each specialist's
 category + name + description so the router can match a goal to the right experts.
 """

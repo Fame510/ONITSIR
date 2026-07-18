@@ -2,7 +2,7 @@
 
 ONITSIR is deliberately small and honest. Five modules, each owning one idea,
 composed by an Engine. This document explains *why* it's shaped this way and how
-the three source systems map onto the code.
+the four layers map onto the code.
 
 ## Design principles
 
@@ -18,7 +18,7 @@ the three source systems map onto the code.
 
 ## Module map
 
-### `roster.py` — the workforce (from agency-agents)
+### `roster.py` — the workforce
 - `Specialist`: an immutable playbook (id, name, category, description, keywords).
 - `Roster`: loads `data/roster.json`, exposes `search()` with a transparent
   scoring model (category hit = 3, keyword hit = 2, name substring = 2).
@@ -27,12 +27,12 @@ the three source systems map onto the code.
 - `Router.route(goal, crew_size)` tokenizes the goal, scores every specialist,
   returns the top-N as `Assignment`s with a `confidence` tier.
 
-### `verification.py` — the Iron Law (from superpowers)
+### `verification.py` — the Iron Law
 - `Evidence`: command + output + passed + timestamp.
 - `VerificationGate.check()`: raises `VerificationError` unless the evidence is
   present, has a command, passed, has real output, and is *fresh* (not stale).
 
-### `workflow.py` — the phase machine (from gsd-pro)
+### `workflow.py` — the phase machine
 - `Phase`: `intake → spec → plan → build → verify → ship`.
 - `Workflow.complete_current(evidence)`: gates the current phase, and only
   advances on success. Ships only when the final phase is verified.

@@ -59,12 +59,36 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(f"Crew: {', '.join(mission.crew_names) or '(none matched)'}\n")
     for line in mission.phase_log:
         print(f"  {line}")
+    if mission.governor is not None:
+        led = mission.governor.ledger
+        print(f"\n  Shackle audit ledger: {len(led)} rulings, chain intact: {led.verify()}")
     print()
     if mission.shipped:
-        print("Mission SHIPPED — every phase passed the Iron Law gate. On it, done.")
+        print("Mission SHIPPED — cleared the Shackle policy gate and the Iron Law gate. On it, done.")
         return 0
+    if mission.hitl_required:
+        print(f"Mission PAUSED for human review — {mission.blocked_reason}")
+        return 2
     print(f"Mission BLOCKED — {mission.blocked_reason}")
     return 1
+
+
+
+def cmd_shackle(args: argparse.Namespace) -> int:
+    """Demo the Governor: run actions against a tiny budget and show the
+    fail-closed policy verdicts + the tamper-evident audit ledger."""
+    from .shackle import Governor, GovernorConfig
+    gov = Governor(GovernorConfig(budget_usd=args.budget, max_repeat_calls=3))
+    print(f"{TAGLINE}\nShackle Governor — budget ${args.budget:.2f}, repeat limit 3\n")
+    actions = [
+        ("web.search", 0.02), ("web.search", 0.02), ("web.search", 0.02),
+        ("llm.generate", args.budget), ("email.send", 0.0),
+    ]
+    for name, cost in actions:
+        verdict, reason = gov.evaluate(name, cost_usd=cost)
+        print(f"  {verdict:>5}  {name:<14} (${cost:.2f})  — {reason}")
+    print(f"\n  Audit ledger: {len(gov.ledger)} rulings · chain intact: {gov.ledger.verify()}")
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -79,6 +103,9 @@ def build_parser() -> argparse.ArgumentParser:
     r = sub.add_parser("run", help="Run a demo mission end to end")
     r.add_argument("goal")
     r.set_defaults(func=cmd_run)
+    sk = sub.add_parser("shackle", help="Demo the Shackle governance gate")
+    sk.add_argument("--budget", type=float, default=0.05)
+    sk.set_defaults(func=cmd_shackle)
     return p
 
 
