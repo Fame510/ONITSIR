@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ONITSIR — On It, Sir. | The AI Agency Operating System</title>
+<meta name="description" content="ONITSIR is an AI agency operating system: a routable roster of 164 specialists, a fail-closed governance gate, a verify-gated workflow, and an autonomous phase machine — running live in your browser." />
+<link rel="icon" href="logo.png" />
+<style>
+  :root{
+    --bg:#07070e; --bg2:#0e0e1c; --panel:#12122a; --panel2:#171736;
+    --ink:#e8e9ff; --dim:#9aa0c8; --line:#26264d;
+    --cyan:#00e5ff; --purple:#a855f7; --green:#22e58c; --red:#ff5470; --amber:#ffb02e;
+    --glow:0 0 24px rgba(0,229,255,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,rgba(168,85,247,.18),transparent),
+        radial-gradient(1000px 500px at 0% 0%,rgba(0,229,255,.12),transparent),var(--bg);
+        color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;}
+  a{color:var(--cyan);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+  header.nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);
+    background:rgba(7,7,14,.72);border-bottom:1px solid var(--line)}
+  .nav .wrap{display:flex;align-items:center;gap:16px;height:62px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.5px}
+  .brand img{width:34px;height:34px;border-radius:8px;box-shadow:var(--glow)}
+  .nav a.link{color:var(--dim);font-size:14px;font-weight:600}
+  .nav .spacer{flex:1}
+  .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);
+    background:linear-gradient(180deg,var(--panel2),var(--panel));color:var(--ink);
+    padding:10px 16px;border-radius:10px;font-weight:700;cursor:pointer;transition:.15s}
+  .btn:hover{border-color:var(--cyan);box-shadow:var(--glow);text-decoration:none}
+  .btn.primary{background:linear-gradient(180deg,#12b6d6,#0a86a0);border-color:#0af;color:#03121a}
+  .btn.primary:hover{box-shadow:0 0 26px rgba(0,229,255,.6)}
+
+  /* hero */
+  .hero{padding:64px 0 30px;text-align:center}
+  .hero .logo{width:120px;height:120px;border-radius:24px;box-shadow:var(--glow);margin-bottom:18px}
+  .hero h1{font-size:clamp(38px,7vw,76px);margin:.1em 0;letter-spacing:2px;
+    background:linear-gradient(90deg,#fff,var(--cyan) 55%,var(--purple));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .tag{font-size:clamp(16px,2.4vw,22px);color:var(--dim);font-weight:600}
+  .hero .sub{max-width:660px;margin:16px auto 0;color:var(--dim)}
+  .pill{display:inline-block;margin:22px 6px 0;padding:6px 14px;border:1px solid var(--line);
+    border-radius:999px;font-size:13px;color:var(--ink);background:var(--panel)}
+  .pill b{color:var(--cyan)}
+  .cta{margin-top:30px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+  section{padding:46px 0}
+  h2.s{font-size:28px;letter-spacing:.5px;margin:0 0 6px}
+  .muted{color:var(--dim)}
+
+  /* layer cards */
+  .layers{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:24px}
+  .layer{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
+    border-radius:16px;padding:18px;position:relative;overflow:hidden}
+  .layer .k{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--cyan);font-weight:800}
+  .layer h3{margin:8px 0 6px;font-size:18px}
+  .layer p{margin:0;color:var(--dim);font-size:14px}
+  .layer .from{margin-top:10px;font-size:12px;color:var(--purple);font-family:ui-monospace,monospace}
+
+  /* mission control */
+  .console{background:var(--bg2);border:1px solid var(--line);border-radius:18px;overflow:hidden;
+    box-shadow:0 30px 80px rgba(0,0,0,.5)}
+  .console .bar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#14142e,#0d0d1e)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
+  .console .bar .ttl{margin-left:8px;color:var(--dim);font-family:ui-monospace,monospace;font-size:13px}
+  .console .body{display:grid;grid-template-columns:340px 1fr;min-height:440px}
+  .controls{padding:18px;border-right:1px solid var(--line);background:var(--panel)}
+  .controls label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);
+    margin:14px 0 6px;font-weight:700}
+  .controls input[type=text],.controls select,.controls input[type=number]{width:100%;padding:10px 12px;
+    background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px}
+  .controls input[type=range]{width:100%}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .runbtn{width:100%;margin-top:18px;justify-content:center;font-size:16px}
+  .stage{padding:18px;overflow:auto}
+  .crewline{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chip{font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--ink)}
+  .chip .cf{color:var(--cyan);font-family:ui-monospace,monospace}
+  .phase{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--line);
+    border-radius:12px;margin-bottom:9px;background:var(--panel);opacity:.35;transition:.25s}
+  .phase.on{opacity:1;border-color:var(--cyan);box-shadow:var(--glow)}
+  .phase.pass{opacity:1;border-color:var(--green)}
+  .phase.block{opacity:1;border-color:var(--red)}
+  .phase.hitl{opacity:1;border-color:var(--amber)}
+  .phase .nm{font-weight:800;text-transform:uppercase;letter-spacing:1px;width:74px;font-size:13px}
+  .phase .gv{font-family:ui-monospace,monospace;font-size:12px;color:var(--dim);flex:1}
+  .badge{font-size:11px;font-weight:800;padding:3px 8px;border-radius:6px;font-family:ui-monospace,monospace}
+  .b-allow{background:rgba(34,229,140,.15);color:var(--green)}
+  .b-deny{background:rgba(255,84,112,.16);color:var(--red)}
+  .b-hitl{background:rgba(255,176,46,.16);color:var(--amber)}
+  .b-ok{background:rgba(0,229,255,.15);color:var(--cyan)}
+  .verdict{margin-top:14px;padding:14px;border-radius:12px;font-weight:800;font-size:16px;display:none}
+  .verdict.show{display:block}
+  .verdict.ship{background:linear-gradient(90deg,rgba(34,229,140,.2),transparent);border:1px solid var(--green);color:var(--green)}
+  .verdict.block{background:linear-gradient(90deg,rgba(255,84,112,.2),transparent);border:1px solid var(--red);color:var(--red)}
+  .verdict.hitl{background:linear-gradient(90deg,rgba(255,176,46,.2),transparent);border:1px solid var(--amber);color:var(--amber)}
+  .ledger{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:none}
+  .ledger.show{display:block}
+  .ledger .lh{padding:8px 12px;background:var(--panel2);font-size:12px;color:var(--dim);
+    display:flex;justify-content:space-between;font-family:ui-monospace,monospace}
+  .ledger table{width:100%;border-collapse:collapse;font-family:ui-monospace,monospace;font-size:11.5px}
+  .ledger td{padding:6px 12px;border-top:1px solid var(--line);color:var(--dim)}
+  .ledger td .h{color:var(--purple)}
+
+  /* roster browser */
+  .rtools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:18px 0}
+  .rtools input{flex:1;min-width:220px;padding:11px 14px;background:var(--bg2);border:1px solid var(--line);
+    border-radius:10px;color:var(--ink)}
+  .cats{display:flex;flex-wrap:wrap;gap:7px}
+  .cat{font-size:12px;padding:5px 11px;border:1px solid var(--line);border-radius:999px;cursor:pointer;color:var(--dim)}
+  .cat.active{background:var(--cyan);color:#04121a;border-color:var(--cyan);font-weight:800}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .card .cat-tag{font-size:11px;color:var(--purple);font-family:ui-monospace,monospace;text-transform:uppercase}
+  .card h4{margin:6px 0 6px;font-size:15px}
+  .card p{margin:0;font-size:13px;color:var(--dim)}
+  .count{color:var(--cyan);font-weight:800}
+
+  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--dim);margin-top:30px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-size:13px;color:var(--cyan)}
+  @media(max-width:840px){.layers{grid-template-columns:1fr 1fr}.console .body{grid-template-columns:1fr}
+    .controls{border-right:none;border-bottom:1px solid var(--line)}}
+  @media(max-width:520px){.layers{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="nav"><div class="wrap">
+  <div class="brand"><img src="logo.png" alt="ONITSIR"/> ONITSIR</div>
+  <div class="spacer"></div>
+  <a class="link" href="#control">Mission Control</a>
+  <a class="link" href="#layers">How it works</a>
+  <a class="link" href="#roster">Roster</a>
+  <a class="btn" href="https://github.com/Fame510/ONITSIR" target="_blank" rel="noopener">GitHub ↗</a>
+</div></header>
+
+<div class="wrap">
+
+  <section class="hero">
+    <img class="logo" src="logo.png" alt="ONITSIR bot"/>
+    <div class="tag">"On It, Sir."</div>
+    <h1>ONITSIR</h1>
+    <p class="sub">The AI agency operating system. Give it a goal — it staffs specialists, clears every action past a fail-closed governor, drives the work through a verify-gated workflow, and ships. <b>Running live, right here in your browser.</b></p>
+    <div>
+      <span class="pill"><b id="pill-specialists">164</b> specialists</span>
+      <span class="pill"><b>4</b> fused layers</span>
+      <span class="pill"><b>ALLOW·DENY·HITL</b> governance</span>
+      <span class="pill"><b>Iron&nbsp;Law</b> verification</span>
+    </div>
+    <div class="cta">
+      <a class="btn primary" href="#control">▶ Run a live mission</a>
+      <a class="btn" href="#roster">Browse the roster</a>
+    </div>
+  </section>
+
+  <section id="control">
+    <h2 class="s">Mission Control <span class="muted">— the real engine, in your browser</span></h2>
+    <p class="muted">This isn't a mockup. The router, the Shackle governor, the phase machine and the Iron-Law gate below are the same logic as the Python package — ported to JavaScript so the landing page <b>is</b> the app.</p>
+    <div class="console" style="margin-top:18px">
+      <div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="ttl">onitsir run — mission control</span></div>
+      <div class="body">
+        <div class="controls">
+          <label>Mission goal</label>
+          <input type="text" id="goal" value="launch a reddit community growth marketing campaign"/>
+          <div class="row2">
+            <div><label>Crew size</label><input type="number" id="crew" value="3" min="1" max="6"/></div>
+            <div><label>Budget (USD)</label><input type="number" id="budget" value="1.00" min="0" step="0.05"/></div>
+          </div>
+          <div class="row2">
+            <div><label>Cost / phase</label><input type="number" id="pcost" value="0.10" min="0" step="0.01"/></div>
+            <div><label>HITL mode</label>
+              <select id="hitl"><option value="">off</option><option value="always">always</option></select>
+            </div>
+          </div>
+          <label>Verifier (Iron Law)</label>
+          <select id="verifier">
+            <option value="pass">all phases pass</option>
+            <option value="fail:build">fail at BUILD</option>
+            <option value="fail:verify">fail at VERIFY</option>
+            <option value="stale">stale evidence (rejected)</option>
+          </select>
+          <button class="btn primary runbtn" id="run">▶ Run Mission</button>
+          <p class="muted" style="font-size:12px;margin-top:12px">Tip: set budget below <code>cost/phase × 6</code> to watch the governor DENY on <code>budget_exhausted</code> before the work is even verified.</p>
+        </div>
+        <div class="stage" id="stage">
+          <div class="crewline" id="crewline"><span class="muted">Press <b>Run Mission</b> to staff a crew and drive the phases.</span></div>
+          <div id="phases"></div>
+          <div class="verdict" id="verdict"></div>
+          <div class="ledger" id="ledger"><div class="lh"><span>SHACKLE AUDIT LEDGER (hash-chained)</span><span id="ledgerhead"></span></div>
+            <table id="ledgertbl"></table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="layers">
+    <h2 class="s">Four systems, one product</h2>
+    <p class="muted">Four proprietary layers, one coherent engine — a combination no other product ships.</p>
+    <div class="layers">
+      <div class="layer"><div class="k">The Roster</div><h3>The workforce</h3>
+        <p>164 specialist playbooks. A router scores your goal and staffs the best-matched crew.</p>
+        </div>
+      <div class="layer"><div class="k">The Governor</div><h3>The guardrail</h3>
+        <p>A fail-closed policy surface rules ALLOW / DENY / HITL before any action runs — budget, loop &amp; repeat breakers + a tamper-evident audit ledger.</p>
+        </div>
+      <div class="layer"><div class="k">The Method</div><h3>The Iron Law</h3>
+        <p>spec → plan → build → verify. No phase is "done" without fresh, passing, real evidence.</p>
+        </div>
+      <div class="layer"><div class="k">The Machine</div><h3>The autopilot</h3>
+        <p>An ordered phase state machine drives a mission from intake to shipped, one verified phase at a time.</p>
+        </div>
+    </div>
+  </section>
+
+  <section id="roster">
+    <h2 class="s">The Roster — <span class="count" id="rcount">164</span> specialists</h2>
+    <p class="muted">The whole workforce, searchable. This is the exact data the router staffs from.</p>
+    <div class="rtools">
+      <input type="text" id="search" placeholder="Search specialists — e.g. reddit, backend, paid ads, video…"/>
+    </div>
+    <div class="cats" id="cats"></div>
+    <div class="grid" id="rgrid"></div>
+  </section>
+
+</div>
+
+<footer><div class="wrap">
+  <div class="brand" style="margin-bottom:8px"><img src="logo.png" style="width:26px;height:26px;border-radius:6px" alt=""/> ONITSIR</div>
+  <p class="muted" style="max-width:640px">The AI agency operating system by <a href="https://github.com/Fame510" target="_blank" rel="noopener">Fame510</a>. Four layers — Roster, Governor, Iron-Law Method, and autonomous Machine — fused into one engine. MIT licensed.</p>
+  <p class="muted">Source &amp; tests → <a href="https://github.com/Fame510/ONITSIR" target="_blank" rel="noopener">github.com/Fame510/ONITSIR</a></p>
+</div></footer>
+
+<script src="app.js"></script>
+</body>
+</html>
