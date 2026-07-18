@@ -77,3 +77,46 @@ def test_crew_names_helper(roster):
     engine = Engine(roster=roster)
     m = engine.run("marketing growth content", _always_pass)
     assert m.crew_names == [a.specialist.name for a in m.crew]
+
+
+# ── Shackle governance fused into the engine ─────────────────────────────────
+def test_engine_keeps_an_intact_audit_ledger(roster):
+    engine = Engine(roster=roster)
+    m = engine.run("marketing content", _always_pass)
+    assert m.governor is not None
+    assert m.audit_intact is True
+    assert len(m.governor.ledger) == len(Phase.ordered())
+
+
+def test_engine_blocks_on_budget_before_verifying(roster):
+    from onitsir.shackle import GovernorConfig
+    engine = Engine(
+        roster=roster,
+        governor_config=GovernorConfig(budget_usd=0.20),
+        phase_cost_usd=0.10,
+    )
+    m = engine.run("ship a product", _always_pass)
+    assert m.shipped is False
+    assert "policy DENY" in (m.blocked_reason or "")
+    assert "budget_exhausted" in (m.blocked_reason or "")
+
+
+def test_engine_pauses_for_hitl_when_policy_demands(roster):
+    from onitsir.shackle import GovernorConfig
+    engine = Engine(roster=roster, governor_config=GovernorConfig(hitl_mode="always"))
+    m = engine.run("anything", _always_pass)
+    assert m.shipped is False
+    assert m.hitl_required is True
+    assert "HITL required" in (m.blocked_reason or "")
+
+
+def test_engine_ships_with_governor_when_budget_is_ample(roster):
+    from onitsir.shackle import GovernorConfig
+    engine = Engine(
+        roster=roster,
+        governor_config=GovernorConfig(budget_usd=100.0),
+        phase_cost_usd=0.10,
+    )
+    m = engine.run("launch a marketing content campaign", _always_pass)
+    assert m.shipped is True
+    assert m.audit_intact is True

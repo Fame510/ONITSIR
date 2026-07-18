@@ -1,4 +1,4 @@
-"""Tests for the Workflow machine (gsd-pro remix layer) + its fusion with the gate."""
+"""Tests for the Workflow machine + its fusion with the gate."""
 import pytest
 
 from onitsir.verification import Evidence, VerificationError, VerificationGate

@@ -1,4 +1,4 @@
-"""Tests for the Verification Gate — the Iron Law (superpowers remix layer)."""
+"""Tests for the Verification Gate — the Iron Law."""
 import time
 
 import pytest

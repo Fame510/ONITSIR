@@ -35,3 +35,19 @@ def test_cli_run_ships(capsys):
 def test_cli_requires_subcommand():
     with pytest.raises(SystemExit):
         cli.main([])
+
+
+def test_cli_shackle_demo(capsys):
+    rc = cli.main(["shackle"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "Shackle Governor" in out
+    assert "budget_exhausted" in out
+    assert "chain intact: True" in out
+
+
+def test_cli_run_shows_audit_ledger(capsys):
+    rc = cli.main(["run", "marketing content campaign"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "Shackle audit ledger" in out

@@ -1,11 +1,11 @@
-"""Tests for the Roster (agency-agents remix layer)."""
+"""Tests for the Roster."""
 import pytest
 
 from onitsir.roster import Roster, Specialist, _tokenize
 
 
 def test_roster_loads_full_workforce(roster):
-    # The remix must carry the entire specialist library, not a subset.
+    # The roster must carry the entire specialist library, not a subset.
     assert len(roster) == 164
 
 
