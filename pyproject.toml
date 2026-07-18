@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "onitsir"
+version = "0.1.0"
+description = 'ONITSIR — "On It, Sir." An AI agency operating system: a routable specialist roster, a verify-gated workflow, and an autonomous phase machine.'
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Fame510" }]
+keywords = ["ai", "agents", "workflow", "automation", "agency"]
+
+[project.scripts]
+onitsir = "onitsir.cli:main"
+
+[tool.setuptools]
+packages = ["onitsir"]
+
+[tool.setuptools.package-data]
+onitsir = ["../data/roster.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
