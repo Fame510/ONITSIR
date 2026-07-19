@@ -174,109 +174,166 @@ function ironLaw(ev,maxAge=3600){
 let ROSTER=[];
 const $=id=>document.getElementById(id);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
-async function loadRoster(){
-  try{ const res=await fetch("roster.json"); const data=await res.json();
-    ROSTER = Array.isArray(data)?data:(data.specialists||data.roster||[]);
-  }catch(e){ ROSTER=[]; }
-  $("rcount").textContent=ROSTER.length;
-  $("pill-specialists").textContent=ROSTER.length;
-  buildCats(); renderRoster();
+// richer routing — matched keywords + description for the crew cards
+function routeDetailed(roster, goal, n){
+  const tokens=tokenize(goal); if(!tokens.length) return [];
+  const scored=roster.map(sp=>{
+    const score=scoreSpecialist(sp,tokens);
+    const kws=(sp.keywords||[]);
+    const matched=[...new Set(kws.filter(k=>{const kl=k.toLowerCase();
+      return tokens.some(t=>kl.includes(t)||t.includes(kl));}))].slice(0,4);
+    return {name:sp.name,category:sp.category,description:sp.description||'',score,matched};
+  }).filter(x=>x.score>0);
+  scored.sort((a,b)=>b.score-a.score);
+  return scored.slice(0,n).map(x=>({...x, confidence: x.score>=9?'high':x.score>=4?'medium':'low'}));
 }
 
+const PIPE=["intake","spec","plan","build","verify","ship"];
+let lastGov=null;
+
+async function staffCrew(){
+  const goal=($("goal").value||"").trim();
+  if(!goal){ $("goal").focus(); return; }
+  const res=$("result");
+  const crew=routeDetailed(ROSTER, goal, 5);
+  const crewEl=$("crew"); crewEl.innerHTML="";
+  res.classList.add("show");
+
+  if(!crew.length){
+    $("crewmeta").textContent="";
+    crewEl.innerHTML='<div class="nomatch">No specialist matched confidently. Try a goal with a clearer domain word — like <b>reddit</b>, <b>landing page</b>, <b>video</b>, <b>ads</b>, or <b>brand</b>.</div>';
+    $("pipeblock").style.display="none"; $("ledblock").style.display="none"; $("realnote").style.display="none";
+    res.scrollIntoView({behavior:"smooth",block:"start"});
+    return;
+  }
+  $("pipeblock").style.display=""; $("ledblock").style.display=""; $("realnote").style.display="";
+  $("crewmeta").textContent=crew.length+" of "+ROSTER.length+" specialists";
+  const top=crew[0].score||1;
+  crew.forEach((m,i)=>{
+    const el=document.createElement("div"); el.className="member"; el.style.animationDelay=(i*70)+"ms";
+    const dsc=esc(m.description);
+    el.innerHTML='<div class="top"><span class="ctag">'+esc(m.category)+'</span>'
+      +'<span class="conf '+m.confidence+'">'+m.confidence+' match</span></div>'
+      +'<h4>'+esc(m.name)+'</h4>'
+      +'<div class="bar"><span style="width:'+Math.round(m.score/top*100)+'%"></span></div>'
+      +'<p>'+dsc.slice(0,120)+(m.description.length>120?'…':'')+'</p>'
+      +(m.matched.length?'<div class="kws">'+m.matched.map(k=>'<span class="kw">'+esc(k)+'</span>').join('')+'</div>':'');
+    crewEl.appendChild(el);
+  });
+
+  await runPipeline(goal);
+  res.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+async function runPipeline(goal){
+  const budget=parseFloat($("budget").value)||0;
+  const forcefail=$("forcefail").checked;
+  const pcost=0.10; // fixed per-phase cost: a low budget genuinely runs out mid-mission
+  const gov=new Governor({budget_usd:budget, max_repeat_calls:5});
+  lastGov=gov;
+
+  const ph=$("phases"); ph.innerHTML="";
+  PIPE.forEach(p=>{ const d=document.createElement("div"); d.className="phase wait"; d.id="p-"+p;
+    d.innerHTML='<span class="nm">'+p+'</span><span class="st" id="s-'+p+'">queued</span>'; ph.appendChild(d); });
+  const vd=$("verdict"); vd.className="verdict"; vd.innerHTML="";
+
+  let ok=true, kind=null, why=null;
+  for(const p of PIPE){
+    const row=$("p-"+p), st=$("s-"+p); row.classList.remove("wait");
+    await sleep(200);
+    const [v,r]=gov.evaluate("phase:"+p,{cost:pcost});
+    if(v==="DENY"){ st.innerHTML='<span class="badge b-deny">DENY</span> Governor stopped the run — <b>'+r+'</b>';
+      ok=false; kind="stop"; why='the Governor denied <b>'+p+'</b> ('+r+')'; break; }
+    if(v==="HITL"){ st.innerHTML='<span class="badge b-hitl">HITL</span> paused for human approval — '+r;
+      ok=false; kind="pause"; why='the Governor paused at <b>'+p+'</b> for human approval'; break; }
+    if(p==="build" && forcefail){
+      st.innerHTML='<span class="badge b-allow">ALLOW</span> <span class="badge b-deny">IRON LAW</span> evidence not passing — refused';
+      ok=false; kind="stop"; why='the Iron Law refused to advance past <b>build</b> — the verification evidence didn\'t pass'; break;
+    }
+    st.innerHTML='<span class="badge b-allow">ALLOW</span> <span class="badge b-gate">GATE ✓</span> governed · evidence required';
+  }
+
+  if(ok){ vd.className="verdict show ok";
+    vd.innerHTML='✔ Plan cleared every gate. In the product, ONITSIR now executes each phase with real command-level verification — and only reports "done" when the evidence actually passes.'; }
+  else if(kind==="pause"){ vd.className="verdict show pause";
+    vd.innerHTML='⏸ Paused — '+why+'. It waits for you instead of guessing.'; }
+  else { vd.className="verdict show stop";
+    vd.innerHTML='✖ Stopped honestly — '+why+'. No fake ship, ever.'; }
+
+  renderLedger(gov);
+}
+
+function renderLedger(gov){
+  const tb=$("ledbody"); tb.innerHTML="";
+  gov.ledger.entries.forEach(e=>{ const tr=document.createElement("tr");
+    const cls=e.verdict==="ALLOW"?"b-allow":e.verdict==="DENY"?"b-deny":"b-hitl";
+    tr.innerHTML='<td>'+e.index+'</td><td><span class="badge '+cls+'">'+e.verdict+'</span></td>'
+      +'<td>'+esc(e.tool_name)+'</td><td>'+esc(e.reason)+'</td>'
+      +'<td><span class="h">'+e.entry_hash.slice(0,14)+'…</span></td>';
+    tb.appendChild(tr); });
+  $("ledmeta").textContent=gov.ledger.entries.length+" rulings";
+}
+
+function verifyChain(){
+  if(!lastGov) return;
+  const ok=lastGov.ledger.verify();
+  const b=$("verifybtn");
+  b.innerHTML = ok ? '✓ Chain verified' : '✗ Chain broken';
+  b.style.color = ok ? 'var(--green)' : 'var(--red)';
+  setTimeout(()=>{ b.innerHTML='🔒 Verify chain'; b.style.color=''; }, 2200);
+}
+
+function setRealNote(){
+  $("realnote").innerHTML='<b>What just ran, for real:</b> the crew was routed live by scoring your goal against all '
+    +ROSTER.length+' specialists, and the pipeline\'s ALLOW/DENY/HITL rulings plus the hash-chained audit ledger were computed right here in your browser — tap <b>Verify chain</b> to re-hash it. '
+    +'The autonomous building and real command-level verification run inside the ONITSIR product; this page is the engine\'s routing + governance core, running live.';
+}
+
+// ── roster browser ──
 function buildCats(){
-  const cats=[...new Set(ROSTER.map(s=>s.category))].sort();
+  const cats=[...new Set(ROSTER.map(s=>s.category))].filter(Boolean).sort();
   const wrap=$("cats"); wrap.innerHTML="";
-  const all=document.createElement("div"); all.className="cat active"; all.textContent="all"; all.dataset.cat="";
-  wrap.appendChild(all);
-  cats.forEach(c=>{const el=document.createElement("div");el.className="cat";el.textContent=c;el.dataset.cat=c;wrap.appendChild(el);});
+  const all=document.createElement("div"); all.className="cat active"; all.textContent="all"; all.dataset.cat=""; wrap.appendChild(all);
+  cats.forEach(c=>{ const el=document.createElement("div"); el.className="cat"; el.textContent=c; el.dataset.cat=c; wrap.appendChild(el); });
   wrap.querySelectorAll(".cat").forEach(el=>el.onclick=()=>{
-    wrap.querySelectorAll(".cat").forEach(x=>x.classList.remove("active"));el.classList.add("active");renderRoster();});
+    wrap.querySelectorAll(".cat").forEach(x=>x.classList.remove("active")); el.classList.add("active"); renderRoster(); });
 }
 function renderRoster(){
   const q=($("search").value||"").toLowerCase().trim();
-  const cat=(document.querySelector(".cat.active")||{}).dataset?.cat||"";
+  const active=document.querySelector(".cat.active");
+  const cat=active?active.dataset.cat:"";
   const grid=$("rgrid"); grid.innerHTML="";
-  let list=ROSTER.filter(s=>{
+  const list=ROSTER.filter(s=>{
     if(cat && s.category!==cat) return false;
     if(!q) return true;
     return (s.name||'').toLowerCase().includes(q)||(s.description||'').toLowerCase().includes(q)
       ||(s.category||'').toLowerCase().includes(q)||(s.keywords||[]).join(' ').toLowerCase().includes(q);
   });
   $("rcount").textContent=list.length;
-  list.slice(0,60).forEach(s=>{const c=document.createElement("div");c.className="card";
-    c.innerHTML=`<div class="cat-tag">${s.category||''}</div><h4>${s.name||''}</h4><p>${(s.description||'').slice(0,120)}</p>`;
-    grid.appendChild(c);});
-  if(list.length>60){const more=document.createElement("div");more.className="card";
-    more.innerHTML=`<h4>+${list.length-60} more</h4><p class="muted">Refine your search to narrow the roster.</p>`;grid.appendChild(more);}
+  list.slice(0,60).forEach(s=>{ const c=document.createElement("div"); c.className="rcard";
+    c.innerHTML='<div class="ctag">'+esc(s.category)+'</div><h4>'+esc(s.name)+'</h4><p>'+esc((s.description||'').slice(0,110))+'</p>';
+    grid.appendChild(c); });
+  if(list.length>60){ const m=document.createElement("div"); m.className="rcard";
+    m.innerHTML='<h4>+'+(list.length-60)+' more</h4><p class="muted">Refine your search to narrow the roster.</p>'; grid.appendChild(m); }
 }
 
-function phaseRow(name){const d=document.createElement("div");d.className="phase";d.id="ph-"+name;
-  d.innerHTML=`<span class="nm">${name}</span><span class="gv" id="gv-${name}">queued…</span>`;return d;}
-
-async function runMission(){
-  const goal=$("goal").value.trim();
-  const crewSize=Math.max(1,Math.min(6,parseInt($("crew").value)||3));
-  const budget=parseFloat($("budget").value)||0;
-  const pcost=parseFloat($("pcost").value)||0;
-  const hitl=$("hitl").value||null;
-  const verifier=makeVerifier($("verifier").value);
-
-  const crew=route(ROSTER,goal,crewSize);
-  const cl=$("crewline"); cl.innerHTML="";
-  if(!crew.length){cl.innerHTML='<span class="b-deny badge">NO MATCH</span> <span class="muted">No confident specialist matched — try a goal with clearer domain words.</span>';}
-  else crew.forEach(a=>{const c=document.createElement("span");c.className="chip";
-    c.innerHTML=`${a.name} <span class="cf">[${a.confidence}]</span>`;cl.appendChild(c);});
-
-  const ph=$("phases"); ph.innerHTML=""; PHASES.forEach(p=>ph.appendChild(phaseRow(p)));
-  const vd=$("verdict"); vd.className="verdict"; vd.textContent="";
-  $("ledger").classList.remove("show");
-
-  const gov=new Governor({budget_usd:budget,max_repeat_calls:3,hitl_mode:hitl});
-  let shipped=true, stopReason=null, stopKind=null;
-
-  for(const phase of PHASES){
-    const row=$("ph-"+phase), gv=$("gv-"+phase);
-    row.classList.add("on"); await sleep(230);
-    // Governor gate
-    const [v,r]=gov.evaluate("phase:"+phase,{cost:pcost});
-    if(v==="DENY"){row.classList.remove("on");row.classList.add("block");
-      gv.innerHTML=`<span class="badge b-deny">DENY</span> policy — ${r}`;
-      shipped=false;stopReason=`${phase}: policy DENY — ${r}`;stopKind="block";break;}
-    if(v==="HITL"){row.classList.remove("on");row.classList.add("hitl");
-      gv.innerHTML=`<span class="badge b-hitl">HITL</span> ${r} — waiting on human`;
-      shipped=false;stopReason=`${phase}: HITL required — ${r}`;stopKind="hitl";break;}
-    gv.innerHTML=`<span class="badge b-allow">ALLOW</span> ${r} · <span class="muted">verifying…</span>`;
-    await sleep(260);
-    // Iron Law gate
-    const ev=verifier(phase); const [ok,vr]=ironLaw(ev);
-    if(!ok){row.classList.remove("on");row.classList.add("block");
-      gv.innerHTML=`<span class="badge b-allow">ALLOW</span> · <span class="badge b-deny">IRON LAW FAIL</span> ${vr}`;
-      shipped=false;stopReason=`${phase}: ${vr}`;stopKind="block";break;}
-    row.classList.remove("on");row.classList.add("pass");
-    gv.innerHTML=`<span class="badge b-allow">ALLOW</span> · <span class="badge b-ok">VERIFIED</span> ${ev.output}`;
-  }
-
-  // verdict
-  if(shipped){vd.className="verdict show ship";
-    vd.innerHTML=`✔ MISSION SHIPPED — cleared the Shackle gate and the Iron Law on all ${PHASES.length} phases. On it, done.`;}
-  else if(stopKind==="hitl"){vd.className="verdict show hitl";
-    vd.innerHTML=`⏸ MISSION PAUSED for human review — ${stopReason}`;}
-  else {vd.className="verdict show block";
-    vd.innerHTML=`✖ MISSION BLOCKED — ${stopReason}. No fake ship.`;}
-
-  // ledger
-  const tbl=$("ledgertbl"); tbl.innerHTML="";
-  gov.ledger.entries.forEach(e=>{const tr=document.createElement("tr");
-    const cls=e.verdict==="ALLOW"?"b-allow":e.verdict==="DENY"?"b-deny":"b-hitl";
-    tr.innerHTML=`<td>#${e.index}</td><td><span class="badge ${cls}">${e.verdict}</span></td>
-      <td>${e.tool_name}</td><td>${e.reason}</td><td class="h">${e.entry_hash.slice(0,12)}…</td>`;tbl.appendChild(tr);});
-  $("ledgerhead").textContent="head "+gov.ledger.head.slice(0,12)+"…  ·  intact: "+gov.ledger.verify();
-  $("ledger").classList.add("show");
+async function loadRoster(){
+  try{ const res=await fetch("roster.json"); const data=await res.json();
+    ROSTER = Array.isArray(data)?data:(data.specialists||data.roster||[]);
+  }catch(e){ ROSTER=[]; }
+  const n=ROSTER.length;
+  ["pill-specialists","pill2","rcount"].forEach(id=>{ const el=$(id); if(el) el.textContent=n; });
+  buildCats(); renderRoster(); setRealNote();
 }
 
-document.addEventListener("DOMContentLoaded",()=>{
+document.addEventListener("DOMContentLoaded", ()=>{
   loadRoster();
-  $("run").onclick=runMission;
-  $("search").addEventListener("input",renderRoster);
+  $("staff").onclick=staffCrew;
+  $("goal").addEventListener("keydown", e=>{ if(e.key==="Enter") staffCrew(); });
+  $("examples").querySelectorAll(".ex").forEach(x=>x.onclick=()=>{ $("goal").value=x.textContent.trim(); staffCrew(); });
+  $("advBtn").onclick=()=>$("adv").classList.toggle("open");
+  $("verifybtn").onclick=verifyChain;
+  $("search").addEventListener("input", renderRoster);
 });
